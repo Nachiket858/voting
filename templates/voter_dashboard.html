@@ -1,5 +1,5 @@
 <h2>Voter Dashboard</h2>
-
+<h2>Welcome, {{ voter_name }}!</h2>
 <h3>Ongoing Elections</h3>
 {% for election in ongoing_elections %}
     <p>{{ election.name }} - Ends: {{ election.end_time }}</p>

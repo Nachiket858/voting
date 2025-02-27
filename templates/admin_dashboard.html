@@ -45,7 +45,7 @@
                                 </li>
                             {% endfor %}
                         </ul>
-                        <button onclick="window.location.href='/admin/results/{{ election._id }}'">View Results</button>
+                        <button onclick="window.location.href='{{ url_for('admin_bp.election_results', election_id=election._id) }}'">View Results</button>
                     </div>
                 {% endfor %}
             {% else %}
@@ -96,7 +96,7 @@
                                 <li>{{ candidate.name }} ({{ candidate.party }})</li>
                             {% endfor %}
                         </ul>
-                        <button onclick="window.location.href='/admin/results/{{ election._id }}'">View Results</button>
+                        <button onclick="window.location.href='{{ url_for('admin_bp.election_results', election_id=election._id) }}'">View Results</button>
                     </div>
                 {% endfor %}
             {% else %}

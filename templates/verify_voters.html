@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Voters</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        .container { width: 60%; margin: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+        button { padding: 8px 12px; cursor: pointer; background-color: green; color: white; border: none; }
+        button:hover { background-color: darkgreen; }
+    </style>
+    <script>
+        function verifyVoter(voterId, button) {
+            fetch(`/admin/approve_voter/${voterId}`, {
+                method: "POST"
+            }).then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    button.parentElement.parentElement.remove();  // Remove row from table
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Voter Verification</h1>
+        {% if voters %}
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Action</th>
+                </tr>
+                {% for voter in voters %}
+                <tr>
+                    <td>{{ voter.name }}</td>
+                    <td>{{ voter.email }}</td>
+                    <td>
+                        <button onclick="verifyVoter('{{ voter._id }}', this)">Verify</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No voters pending verification.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

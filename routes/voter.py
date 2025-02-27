@@ -240,7 +240,8 @@ def register():
             "name": name,
             "email": email,
             "password": password,
-            "face_embedding": embedding
+            "face_embedding": embedding,
+            'verified':False
         }
         voters_collection.insert_one(voter_data)
 
@@ -308,6 +309,25 @@ def face_login():
         return jsonify({"error": str(e)})
 
 
+# @voter_bp.route("/dashboard", methods=["GET"])
+# def dashboard():
+#     if "voter_id" not in session:
+#         flash("Please log in first.", "warning")
+#         return redirect(url_for("voter_bp.login"))
+
+#     voter_id = ObjectId(session["voter_id"])
+#     current_time = datetime.now()
+
+#     # Fetch elections
+#     ongoing_elections = list(elections_collection.find({"start_time": {"$lte": current_time}, "end_time": {"$gte": current_time}}))
+#     upcoming_elections = list(elections_collection.find({"start_time": {"$gt": current_time}}))
+
+#     # Fetch voted elections
+#     voted_elections = votes_collection.find({"voter_id": voter_id})
+#     voted_election_ids = {str(vote["election_id"]) for vote in voted_elections}
+
+#     return render_template("voter_dashboard.html", ongoing_elections=ongoing_elections, upcoming_elections=upcoming_elections, voted_election_ids=voted_election_ids)
+
 @voter_bp.route("/dashboard", methods=["GET"])
 def dashboard():
     if "voter_id" not in session:
@@ -317,6 +337,14 @@ def dashboard():
     voter_id = ObjectId(session["voter_id"])
     current_time = datetime.now()
 
+    # Fetch voter details
+    voter = voters_collection.find_one({"_id": voter_id}, {"name": 1})  # Fetch only the name
+    if not voter:
+        flash("Voter not found!", "danger")
+        return redirect(url_for("voter_bp.login"))
+
+    voter_name = voter.get("name", "Voter")  # Default to "Voter" if name is missing
+
     # Fetch elections
     ongoing_elections = list(elections_collection.find({"start_time": {"$lte": current_time}, "end_time": {"$gte": current_time}}))
     upcoming_elections = list(elections_collection.find({"start_time": {"$gt": current_time}}))
@@ -325,8 +353,13 @@ def dashboard():
     voted_elections = votes_collection.find({"voter_id": voter_id})
     voted_election_ids = {str(vote["election_id"]) for vote in voted_elections}
 
-    return render_template("voter_dashboard.html", ongoing_elections=ongoing_elections, upcoming_elections=upcoming_elections, voted_election_ids=voted_election_ids)
-
+    return render_template(
+        "voter_dashboard.html",
+        voter_name=voter_name,  # Pass voter name to template
+        ongoing_elections=ongoing_elections,
+        upcoming_elections=upcoming_elections,
+        voted_election_ids=voted_election_ids
+    )
 
 @voter_bp.route("/logout")
 def logout():
@@ -334,69 +367,69 @@ def logout():
     flash("You have been logged out.", "info")
     return redirect(url_for("voter_bp.voter_home"))
 
-@voter_bp.route('/vote/<election_id>', methods=['GET', 'POST'])
-def vote(election_id):
-    if "voter_id" not in session:
-        flash("Please log in first.", "warning")
-        return redirect(url_for("voter_bp.login"))
+# @voter_bp.route('/vote/<election_id>', methods=['GET', 'POST'])
+# def vote(election_id):
+#     if "voter_id" not in session:
+#         flash("Please log in first.", "warning")
+#         return redirect(url_for("voter_bp.login"))
 
-    voter_id = ObjectId(session["voter_id"])
-    election = elections_collection.find_one({"_id": ObjectId(election_id)})
-    if not election:
-        flash("Election not found!", "danger")
-        return redirect(url_for("voter_bp.dashboard"))
+#     voter_id = ObjectId(session["voter_id"])
+#     election = elections_collection.find_one({"_id": ObjectId(election_id)})
+#     if not election:
+#         flash("Election not found!", "danger")
+#         return redirect(url_for("voter_bp.dashboard"))
 
-    candidates = election.get("candidates", [])
+#     candidates = election.get("candidates", [])
 
-    if request.method == "POST":
-        face_data = request.form.get("face_data")
-        selected_candidate = request.form.get("candidate")
+#     if request.method == "POST":
+#         face_data = request.form.get("face_data")
+#         selected_candidate = request.form.get("candidate")
 
-        if not face_data or not selected_candidate:
-            flash("Please select a candidate and verify your face.", "danger")
-            return redirect(url_for("voter_bp.vote", election_id=election_id))
+#         if not face_data or not selected_candidate:
+#             flash("Please select a candidate and verify your face.", "danger")
+#             return redirect(url_for("voter_bp.vote", election_id=election_id))
 
-        # Face recognition verification
-        face_img = decode_image(face_data)
-        if face_img is None or detect_face(face_img) is None:
-            flash("No face detected! Please try again.", "danger")
-            return redirect(url_for("voter_bp.vote", election_id=election_id))
+#         # Face recognition verification
+#         face_img = decode_image(face_data)
+#         if face_img is None or detect_face(face_img) is None:
+#             flash("No face detected! Please try again.", "danger")
+#             return redirect(url_for("voter_bp.vote", election_id=election_id))
 
-        # Extract facial embeddings
-        try:
-            target_embedding = DeepFace.represent(face_img, model_name="Facenet")[0]["embedding"]
-        except:
-            flash("Face recognition failed! Try again.", "danger")
-            return redirect(url_for("voter_bp.vote", election_id=election_id))
+#         # Extract facial embeddings
+#         try:
+#             target_embedding = DeepFace.represent(face_img, model_name="Facenet")[0]["embedding"]
+#         except:
+#             flash("Face recognition failed! Try again.", "danger")
+#             return redirect(url_for("voter_bp.vote", election_id=election_id))
 
-        # Compare with stored voter embedding
-        voter = voters_collection.find_one({"_id": voter_id})
-        stored_embedding = np.array(voter["face_embedding"])
-        distance = np.linalg.norm(stored_embedding - np.array(target_embedding))
+#         # Compare with stored voter embedding
+#         voter = voters_collection.find_one({"_id": voter_id})
+#         stored_embedding = np.array(voter["face_embedding"])
+#         distance = np.linalg.norm(stored_embedding - np.array(target_embedding))
 
-        if distance > 10:  # Adjust threshold if needed
-            flash("Face does not match! Voting failed.", "danger")
-            return redirect(url_for("voter_bp.vote", election_id=election_id))
+#         if distance > 10:  # Adjust threshold if needed
+#             flash("Face does not match! Voting failed.", "danger")
+#             return redirect(url_for("voter_bp.vote", election_id=election_id))
 
-        # Check if voter has already voted
-        existing_vote = votes_collection.find_one({"voter_id": voter_id, "election_id": ObjectId(election_id)})
-        if existing_vote:
-            flash("You have already voted in this election!", "warning")
-            return redirect(url_for("voter_bp.dashboard"))
+#         # Check if voter has already voted
+#         existing_vote = votes_collection.find_one({"voter_id": voter_id, "election_id": ObjectId(election_id)})
+#         if existing_vote:
+#             flash("You have already voted in this election!", "warning")
+#             return redirect(url_for("voter_bp.dashboard"))
 
-        # Store vote in database
-        vote_data = {
-            "voter_id": voter_id,
-            "election_id": ObjectId(election_id),
-            "candidate": selected_candidate,
-            "timestamp": datetime.now()
-        }
-        votes_collection.insert_one(vote_data)
+#         # Store vote in database
+#         vote_data = {
+#             "voter_id": voter_id,
+#             "election_id": ObjectId(election_id),
+#             "candidate": selected_candidate,
+#             "timestamp": datetime.now()
+#         }
+#         votes_collection.insert_one(vote_data)
 
-        flash("Vote submitted successfully!", "success")
-        return redirect(url_for("voter_bp.dashboard"))
+#         flash("Vote submitted successfully!", "success")
+#         return redirect(url_for("voter_bp.dashboard"))
 
-    return render_template("vote.html", election=election, candidates=candidates)
+#     return render_template("vote.html", election=election, candidates=candidates)
 
 
 @voter_bp.route("/verify_face", methods=["POST"])
@@ -435,3 +468,76 @@ def verify_face():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+@voter_bp.route('/vote/<election_id>', methods=['GET', 'POST'])
+def vote(election_id):
+    if "voter_id" not in session:
+        flash("Please log in first.", "warning")
+        return redirect(url_for("voter_bp.login"))
+
+    voter_id = ObjectId(session["voter_id"])
+    voter = voters_collection.find_one({"_id": voter_id})
+
+    if not voter:
+        flash("Voter not found!", "danger")
+        return redirect(url_for("voter_bp.dashboard"))
+
+    # Check if voter is verified
+    if not voter.get("verified", False):
+        flash("You are not verified to vote. Please contact the administrator.", "danger")
+        return redirect(url_for("voter_bp.dashboard"))
+
+    election = elections_collection.find_one({"_id": ObjectId(election_id)})
+    if not election:
+        flash("Election not found!", "danger")
+        return redirect(url_for("voter_bp.dashboard"))
+
+    candidates = election.get("candidates", [])
+
+    if request.method == "POST":
+        face_data = request.form.get("face_data")
+        selected_candidate = request.form.get("candidate")
+
+        if not face_data or not selected_candidate:
+            flash("Please select a candidate and verify your face.", "danger")
+            return redirect(url_for("voter_bp.vote", election_id=election_id))
+
+        # Face recognition verification
+        face_img = decode_image(face_data)
+        if face_img is None or detect_face(face_img) is None:
+            flash("No face detected! Please try again.", "danger")
+            return redirect(url_for("voter_bp.vote", election_id=election_id))
+
+        # Extract facial embeddings
+        try:
+            target_embedding = DeepFace.represent(face_img, model_name="Facenet")[0]["embedding"]
+        except:
+            flash("Face recognition failed! Try again.", "danger")
+            return redirect(url_for("voter_bp.vote", election_id=election_id))
+
+        # Compare with stored voter embedding
+        stored_embedding = np.array(voter["face_embedding"])
+        distance = np.linalg.norm(stored_embedding - np.array(target_embedding))
+
+        if distance > 10:  # Adjust threshold if needed
+            flash("Face does not match! Voting failed.", "danger")
+            return redirect(url_for("voter_bp.vote", election_id=election_id))
+
+        # Check if voter has already voted
+        existing_vote = votes_collection.find_one({"voter_id": voter_id, "election_id": ObjectId(election_id)})
+        if existing_vote:
+            flash("You have already voted in this election!", "warning")
+            return redirect(url_for("voter_bp.dashboard"))
+
+        # Store vote in database
+        vote_data = {
+            "voter_id": voter_id,
+            "election_id": ObjectId(election_id),
+            "candidate": selected_candidate,
+            "timestamp": datetime.now()
+        }
+        votes_collection.insert_one(vote_data)
+
+        flash("Vote submitted successfully!", "success")
+        return redirect(url_for("voter_bp.dashboard"))
+
+    return render_template("vote.html", election=election, candidates=candidates)

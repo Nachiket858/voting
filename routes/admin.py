@@ -3,6 +3,7 @@ from datetime import datetime
 from bson.objectid import ObjectId
 # from app import mongo
 from db import mongo
+from ast import literal_eval
 
 admin_bp = Blueprint("admin_bp", __name__)
 
@@ -144,3 +145,84 @@ def delete_candidate(election_id, candidate_name, candidate_party):
 
     # flash("Candidate deleted successfully!", "success")
     return redirect(url_for("admin_bp.dashboard"))
+
+
+@admin_bp.route("/verify_voters")
+def verify_voters():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_bp.login"))
+
+    # Fetch unverified voters (verified: False)
+    unverified_voters = list(mongo.db.voters.find({"verified": False}))
+
+    return render_template("verify_voters.html", voters=unverified_voters)
+
+
+@admin_bp.route("/approve_voter/<voter_id>", methods=["POST"])
+def approve_voter(voter_id):
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    # Update voter status to verified (True)
+    mongo.db.voters.update_one({"_id": ObjectId(voter_id)}, {"$set": {"verified": True}})
+
+    return jsonify({"message": "Voter Verified Successfully"}), 200
+
+
+
+
+
+# @admin_bp.route("/election_results/<election_id>")
+# def election_results(election_id):
+#     if not session.get("admin_logged_in"):
+#         return redirect("/admin/login")
+
+#     # Aggregate votes to count votes per candidate
+#     pipeline = [
+#         {"$match": {"election_id": ObjectId(election_id)}},  # Filter votes for this election
+#         {"$group": {"_id": "$candidate", "votes": {"$sum": 1}}},  # Group by candidate and count votes
+#         {"$sort": {"votes": -1}}  # Sort by vote count in descending order
+#     ]
+#     results = list(mongo.db.votes.aggregate(pipeline))
+
+#     # Fetch election details
+#     election = mongo.db.elections.find_one({"_id": ObjectId(election_id)})
+
+#     return render_template("election_results.html", election=election, results=results)
+@admin_bp.route("/election_results/<election_id>")
+def election_results(election_id):
+    if not session.get("admin_logged_in"):
+        return redirect("/admin/login")
+
+    # Fetch all votes for the election
+    votes = list(mongo.db.votes.find({"election_id": ObjectId(election_id)}))
+
+    # Aggregate votes manually
+    results = {}
+    for vote in votes:
+        # Parse the candidate string into a dictionary
+        try:
+            candidate = literal_eval(vote["candidate"])  # Convert string to dictionary
+            candidate_key = (candidate["name"], candidate["party"])  # Use (name, party) as key
+        except (ValueError, KeyError, SyntaxError):
+            continue  # Skip invalid candidate data
+
+        # Count votes for each candidate
+        if candidate_key in results:
+            results[candidate_key] += 1
+        else:
+            results[candidate_key] = 1
+
+    # Convert results to a list of dictionaries for the template
+    results_list = [
+        {"name": key[0], "party": key[1], "votes": value}
+        for key, value in results.items()
+    ]
+
+    # Sort results by vote count (descending)
+    results_list.sort(key=lambda x: x["votes"], reverse=True)
+
+    # Fetch election details
+    election = mongo.db.elections.find_one({"_id": ObjectId(election_id)})
+
+    return render_template("election_results.html", election=election, results=results_list)
