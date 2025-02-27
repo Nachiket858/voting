@@ -1,0 +1,94 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voter Options</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; padding: 50px; }
+        .btn { padding: 10px 20px; font-size: 18px; margin: 10px; text-decoration: none; border-radius: 5px; }
+        .login { background-color: #4CAF50; color: white; }
+        .register { background-color: #008CBA; color: white; }
+    </style>
+</head>
+<body>
+
+    <h2>Welcome Voter!</h2>
+    <p>Please choose an option:</p>
+
+    <a href="{{ url_for('voter_bp.login') }}" class="btn login">Log In</a>
+    <a href="{{ url_for('voter_bp.register') }}" class="btn register">Register</a>
+
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voter Options</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            margin-bottom: 15px;
+        }
+        .btn {
+            display: block;
+            width: 200px;
+            padding: 12px;
+            font-size: 18px;
+            margin: 10px auto;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            transition: 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .login {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .register {
+            background-color: #008CBA;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        @media (max-width: 600px) {
+            .container {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Welcome Voter!</h2>
+        <p>Please choose an option:</p>
+        <!-- href="{{ url_for('voter_bp.dashboard') }}" -->
+        <a href="{{ url_for('voter_bp.login') }}" class="btn login">Log In</a>
+        <a href="{{ url_for('voter_bp.register') }}" class="btn register">Register</a>
+    </div>
+
+</body>
+</html>

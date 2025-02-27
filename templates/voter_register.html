@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voter Registration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Voter Registration</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form id="registerForm" method="POST" enctype="multipart/form-data">
+            <label for="name">Full Name:</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+
+            <h3>Capture Your Face</h3>
+            <video id="video" width="320" height="240" autoplay></video>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <button type="button" id="captureBtn">Capture Face</button>
+            <input type="hidden" id="face_data" name="face_data">
+
+            <button type="submit">Register</button>
+        </form>
+
+        <!-- <p>Already registered? <a href="{{ url_for('voter_bp.login') }}">Login here</a></p> -->
+        <p>Already registered? <a href="{{ url_for('voter_bp.login') }}">Login here</a></p>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const faceDataInput = document.getElementById('face_data');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => video.srcObject = stream)
+            .catch(err => console.error("Error accessing webcam: ", err));
+
+        captureBtn.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            faceDataInput.value = canvas.toDataURL('image/jpeg');
+            alert("Face Captured Successfully!");
+        });
+    </script>
+</body>
+</html>

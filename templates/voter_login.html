@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voter Login</title>
+</head>
+<body>
+    <h2>Voter Login Page</h2>
+    
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p class="{{ category }}">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('voter_bp.login') }}" method="POST">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <p>Or log in using face recognition:</p>
+    <button onclick="captureFaceLogin()">Face Login</button>
+
+    <script>
+        function captureFaceLogin() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    let video = document.createElement("video");
+                    video.srcObject = stream;
+                    video.play();
+                    setTimeout(() => {
+                        let canvas = document.createElement("canvas");
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        let ctx = canvas.getContext("2d");
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        let faceData = canvas.toDataURL("image/jpeg");
+
+                        fetch("{{ url_for('voter_bp.face_login') }}", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ face_data: faceData })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.message) {
+                                alert(data.message);
+                                window.location.href = "{{ url_for('voter_bp.dashboard') }}";
+                            } else {
+                                alert(data.error);
+                            }
+                        })
+                        .catch(error => console.error(error));
+                    }, 1000);
+                })
+                .catch(error => alert("Camera access denied!"));
+        }
+    </script>
+</body>
+</html>

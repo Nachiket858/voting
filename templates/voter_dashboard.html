@@ -1,0 +1,20 @@
+<h2>Voter Dashboard</h2>
+
+<h3>Ongoing Elections</h3>
+{% for election in ongoing_elections %}
+    <p>{{ election.name }} - Ends: {{ election.end_time }}</p>
+    {% if election._id|string in voted_election_ids %}
+        <button disabled>Voted</button>
+    {% else %}
+        <form action="{{ url_for('voter_bp.vote', election_id=election._id) }}" method="GET">
+            <button type="submit">Vote Now</button>
+        </form>
+    {% endif %}
+{% endfor %}
+
+<h3>Upcoming Elections</h3>
+{% for election in upcoming_elections %}
+    <p>{{ election.name }} - Starts: {{ election.start_time }}</p>
+{% endfor %}
+
+<a href="{{ url_for('voter_bp.logout') }}">Logout</a>

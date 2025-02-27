@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Vote</title>
+    <script>
+        function captureFace() {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            document.getElementById('face_data').value = canvas.toDataURL('image/jpeg');
+        }
+    </script>
+</head>
+<body>
+    <h2>Vote for {{ election.name }}</h2>
+    
+    <form method="POST">
+        <label>Select Candidate:</label>
+        {% for candidate in candidates %}
+            <input type="radio" name="candidate" value="{{ candidate }}" required> {{ candidate }}<br>
+        {% endfor %}
+
+        <br>
+
+        <label>Face Verification:</label>
+        <video id="video" autoplay></video>
+        <input type="hidden" name="face_data" id="face_data">
+        <button type="button" onclick="captureFace()">Capture Face</button>
+
+        <br><br>
+
+        <button type="submit">Submit Vote</button>
+    </form>
+
+    <a href="{{ url_for('voter_bp.dashboard') }}">Back to Dashboard</a>
+
+    <script>
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { document.getElementById('video').srcObject = stream; })
+            .catch(err => { console.error("Error accessing webcam:", err); });
+    </script>
+</body>
+</html>

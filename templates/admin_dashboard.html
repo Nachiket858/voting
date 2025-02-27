@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        .container { width: 60%; margin: auto; }
+        button { padding: 10px 20px; margin: 10px; font-size: 18px; cursor: pointer; }
+        .election-list { text-align: left; margin-top: 20px; }
+        .election-item { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 5px; padding-bottom: 15px; }
+        .ongoing { background-color: #ffeb99; }   /* Yellow for ongoing */
+        .upcoming { background-color: #cce5ff; }  /* Blue for upcoming */
+        .completed { background-color: #d4edda; } /* Green for completed */
+        .election-item a { text-decoration: none; color: blue; font-weight: bold; }
+        .delete-btn { color: red; margin-left: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome, Admin</h1>
+
+        <!-- ✅ Admin Options -->
+        <button onclick="window.location.href='/admin/create_election'">Create Election</button>
+        <button onclick="window.location.href='/admin/verify_voters'">Verify Voters</button>
+        <button onclick="window.location.href='/admin/logout'">Logout</button>
+
+        <!-- ✅ Ongoing Elections -->
+        <h2>Ongoing Elections</h2>
+        <div class="election-list">
+            {% if ongoing %}
+                {% for election in ongoing %}
+                    <div class="election-item ongoing">
+                        <strong>{{ election.name }}</strong> - {{ election.region }}  
+                        <br>
+                        🕒 Start: {{ election.start_time.strftime('%Y-%m-%d %H:%M:%S') }} | End: {{ election.end_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                        <h4>Candidates:</h4>
+                        <ul>
+                            {% for candidate in election.candidates %}
+                                <li>
+                                    {{ candidate.name }} ({{ candidate.party }})
+                                    <a class="delete-btn" href="{{ url_for('admin_bp.delete_candidate', election_id=election._id, candidate_name=candidate.name, candidate_party=candidate.party) }}" 
+                                       onclick="return confirm('Are you sure you want to delete this candidate?');">❌</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <button onclick="window.location.href='/admin/results/{{ election._id }}'">View Results</button>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No ongoing elections.</p>
+            {% endif %}
+        </div>
+
+        <!-- ✅ Upcoming Elections -->
+        <h2>Upcoming Elections</h2>
+        <div class="election-list">
+            {% if upcoming %}
+                {% for election in upcoming %}
+                    <div class="election-item upcoming">
+                        <strong>{{ election.name }}</strong> - {{ election.region }}  
+                        <br>
+                        🕒 Start: {{ election.start_time.strftime('%Y-%m-%d %H:%M:%S') }} | End: {{ election.end_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                        <br>
+                        <a href="/admin/add_candidate/{{ election._id }}">➕ Add Candidate</a>
+                        <h4>Candidates:</h4>
+                        <ul>
+                            {% for candidate in election.candidates %}
+                                <li>
+                                    {{ candidate.name }} ({{ candidate.party }})
+                                    <a class="delete-btn" href="{{ url_for('admin_bp.delete_candidate', election_id=election._id, candidate_name=candidate.name, candidate_party=candidate.party) }}" 
+                                       onclick="return confirm('Are you sure you want to delete this candidate?');">❌</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No upcoming elections.</p>
+            {% endif %}
+        </div>
+
+        <!-- ✅ Completed Elections -->
+        <h2>Completed Elections</h2>
+        <div class="election-list">
+            {% if completed %}
+                {% for election in completed %}
+                    <div class="election-item completed">
+                        <strong>{{ election.name }}</strong> - {{ election.region }}  
+                        <br>
+                        🕒 Start: {{ election.start_time.strftime('%Y-%m-%d %H:%M:%S') }} | End: {{ election.end_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                        <h4>Candidates:</h4>
+                        <ul>
+                            {% for candidate in election.candidates %}
+                                <li>{{ candidate.name }} ({{ candidate.party }})</li>
+                            {% endfor %}
+                        </ul>
+                        <button onclick="window.location.href='/admin/results/{{ election._id }}'">View Results</button>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No completed elections.</p>
+            {% endif %}
+        </div>
+
+    </div>
+</body>
+</html>
